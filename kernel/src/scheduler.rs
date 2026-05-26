@@ -1,0 +1,170 @@
+/*
+    ImandraOS the microkernel-based operating system
+    Copyright (C) 2026  Yuriy Alekseyevich Zhelyazko
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+use crate::{
+    arch::{self, HEAP_BEGIN, TEXT_BEGIN, jump_to_user_space, memory_management::Paging},
+    frame_allocator,
+    memory_management::{
+        PAGE_EXEC_FLAG, PAGE_READ_FLAG, PAGE_USER_FLAG, PAGE_WRITE_FLAG, PagingInterface,
+    },
+};
+use lazy_static::lazy_static;
+use spin::Mutex;
+
+#[repr(u8)]
+#[derive(Clone, Copy, PartialEq)]
+pub enum TaskStatus {
+    None = 0,
+    Runnable = 1,
+}
+
+#[derive(Clone, Copy)]
+pub struct Task {
+    pub id: u32,
+    pub parent_task_id: u32,
+    pub status: TaskStatus,
+    pub pc: u64,
+    pub prog_addr: u64,
+    pub prog_size: usize,
+    pub kernel_stack: u64,
+    pub page_table: u64,
+}
+
+impl Task {
+    pub fn new() -> Self {
+        Self {
+            id: 0,
+            parent_task_id: 0,
+            status: TaskStatus::None,
+            pc: 0,
+            prog_addr: 0,
+            prog_size: 0,
+            kernel_stack: 0,
+            page_table: 0,
+        }
+    }
+}
+
+lazy_static! {
+    pub static ref TASKS: Mutex<[Task; 32]> = Mutex::new([Task::new(); 32]);
+    pub static ref CURRENT_TASK_ID: Mutex<u32> = Mutex::new(0);
+}
+
+pub fn init() {
+    (0..32).for_each(|task_id| {
+        TASKS.lock()[task_id].id = task_id as u32;
+        TASKS.lock()[task_id].status = TaskStatus::None;
+    });
+}
+
+pub fn add_task(prog: &[u8]) {
+    let task_id = TASKS
+        .lock()
+        .iter()
+        .find(|task| task.status == TaskStatus::None)
+        .expect("Not founded free task id")
+        .id;
+
+    let task = &mut TASKS.lock()[task_id as usize];
+
+    let prog_size_in_pages = prog.len() / 4096 + (prog.len() % 4096 > 0) as usize;
+
+    task.parent_task_id = 0;
+    task.status = TaskStatus::Runnable;
+    task.pc = 0x9010_0000;
+    task.prog_addr = frame_allocator::alloc(prog_size_in_pages);
+    task.prog_size = prog.len();
+    task.kernel_stack = frame_allocator::alloc(1);
+    task.page_table = frame_allocator::alloc(1);
+
+    let prog_mem =
+        unsafe { core::slice::from_raw_parts_mut(task.prog_addr as *mut u8, task.prog_size) };
+    prog_mem.copy_from_slice(prog);
+
+    let page_table = unsafe { core::slice::from_raw_parts_mut(task.page_table as *mut u32, 4096) };
+    page_table.fill(0);
+    let task_paging = Paging::from_page_table(task.page_table);
+
+    unsafe {
+        task_paging
+            .map_region(
+                TEXT_BEGIN,
+                TEXT_BEGIN,
+                HEAP_BEGIN as usize - TEXT_BEGIN as usize,
+                PAGE_READ_FLAG | PAGE_WRITE_FLAG | PAGE_EXEC_FLAG,
+            )
+            .expect("Kernel mapping error");
+    }
+
+    task_paging
+        .map(
+            0x1000_0000,
+            0x1000_0000,
+            0,
+            PAGE_READ_FLAG | PAGE_WRITE_FLAG | PAGE_USER_FLAG,
+        )
+        .expect("UART mapping error");
+
+    task_paging
+        .map(
+            task.kernel_stack,
+            0x9000_0000,
+            0,
+            PAGE_READ_FLAG | PAGE_WRITE_FLAG,
+        )
+        .expect("Kernel stack mapping error");
+
+    task_paging
+        .map_region(
+            task.prog_addr,
+            task.pc,
+            task.prog_size,
+            PAGE_READ_FLAG | PAGE_WRITE_FLAG | PAGE_EXEC_FLAG | PAGE_USER_FLAG,
+        )
+        .expect("User program mapping error");
+}
+
+pub fn switch() -> ! {
+    let pc = {
+        let tasks = TASKS.lock();
+
+        while tasks[*CURRENT_TASK_ID.lock() as usize].status != TaskStatus::Runnable {
+            *CURRENT_TASK_ID.lock() += 1;
+
+            if *CURRENT_TASK_ID.lock() == 32 {
+                *CURRENT_TASK_ID.lock() = 0;
+            }
+        }
+
+        let task = &tasks[*CURRENT_TASK_ID.lock() as usize];
+
+        let paging = Paging::from_page_table(task.page_table);
+        paging.enable();
+
+        task.pc
+    };
+
+    arch::opensbi::set_timer(unsafe { arch::rdtime() } + 10000000);
+    unsafe {
+        jump_to_user_space(pc);
+    }
+}
+
+pub fn update_pc_for_current_task(new_program_counter: u64) {
+    TASKS.lock()[*CURRENT_TASK_ID.lock() as usize].pc = new_program_counter;
+}

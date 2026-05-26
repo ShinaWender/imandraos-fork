@@ -1,0 +1,31 @@
+cargo := `which cargo`
+    
+target := ''
+debug := ''
+cpus := ''
+mem := ''
+
+cargo_target := \
+if target == 'riscv64' { 'riscv64imac-unknown-none-elf' } \
+else { '' }
+
+rustflags := \
+if target == 'riscv64' { '"-Clink-arg=./ldscripts/riscv64_linker.ld"' } \
+else { '' }
+
+cargoflags := \
+if debug == '0' { '--release' } \
+else { '' }
+
+qemuflags := \
+if debug == '0' { '' } \
+else { '-s -S' }
+
+clean:
+    {{ cargo }} clean
+
+build:
+    RUSTFLAGS={{rustflags}} {{ cargo }} build {{cargoflags}} --target {{cargo_target}}
+
+run:
+    qemu-system-{{target}} -smp cpus={{cpus}} -m {{mem}}M -machine virt -kernel target/{{cargo_target}}/debug/kernel {{qemuflags}}
