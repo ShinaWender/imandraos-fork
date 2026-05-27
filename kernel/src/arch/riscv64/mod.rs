@@ -61,6 +61,6 @@ use crate::scheduler;
 #[unsafe(no_mangle)]
 extern "C" fn _switch(program_counter: u64) -> ! {
     PAGING.lock().enable();
-    scheduler::update_pc_for_current_task(program_counter);
+    scheduler::update_pc_for_current_task(program_counter + 4);
     scheduler::switch();
 }
