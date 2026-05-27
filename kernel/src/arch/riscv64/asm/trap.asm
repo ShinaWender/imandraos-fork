@@ -18,44 +18,26 @@
 
 .section .text
 
-.global trap_handler_table
 .align 16
+.global trap_handler_table
 trap_handler_table:
-        j trap_handler_asm
-        j soft_interrupt_asm
+        j .
+        j .
         j .
         j .
         j timer_interrupt_asm
         j timer_interrupt_asm
         j timer_interrupt_asm
+        j timer_interrupt_asm
         j .
         j .
-        j external_interrupt_asm
         j .
         j .
         j .
-        j counter_overflow_interrupt_asm
+        j .
         j .
         j .
         
-.global trap_handler_asm
-.align 16
-trap_handler_asm:
-        csrw sscratch, a0
-        csrr a0, scause
-
-        addi a0, a0, -8
-        beqz a0, env_call_handler
-
-env_call_handler:
-
-        j .
-
-.align 16
-.global soft_interrupt_asm
-soft_interrupt_asm:
-        j .
-
 .align 16
 .global timer_interrupt_asm
 timer_interrupt_asm:
@@ -103,13 +85,3 @@ timer_interrupt_asm:
 
         csrr a0, sepc
         j _switch
-        
-.align 16
-.global external_interrupt_asm
-external_interrupt_asm:
-        j .
-
-.align 16
-.global counter_overflow_interrupt_asm
-counter_overflow_interrupt_asm:
-        j .
