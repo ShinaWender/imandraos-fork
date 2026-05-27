@@ -27,6 +27,7 @@ mod memory_management;
 mod ns16550a;
 mod scheduler;
 mod smp;
+mod timer;
 
 use core::panic::PanicInfo;
 use lazy_static::lazy_static;
@@ -34,9 +35,10 @@ use smp::SmpInterface;
 use spin::Mutex;
 
 use crate::{
-    arch::memory_management::Paging,
+    arch::{memory_management::Paging, timer::Timer},
     memory_management::{PAGE_EXEC_FLAG, PAGE_READ_FLAG, PAGE_WRITE_FLAG, PagingInterface},
     ns16550a::Ns16550a,
+    timer::TimerInterface,
 };
 
 lazy_static! {
@@ -109,6 +111,9 @@ extern "C" fn main(is_main_cpu: bool, cpu_id: usize, device_tree_blob: *mut u8) 
             paging.enable();
         }
         println!("Virtual memory initialized");
+
+        Timer::init();
+        println!("Timer initialized");
 
         println!("Pryvitanne svet!");
 

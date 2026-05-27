@@ -45,9 +45,6 @@ start:
         li t0, 1
         csrw sie, t0
 
-        li t0, 32
-        csrs sie, t0
-
         la sp, STACK
         li t1, 4096
         mul t0, a0, t1

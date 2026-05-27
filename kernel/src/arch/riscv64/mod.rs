@@ -21,6 +21,7 @@ use core::arch::global_asm;
 pub mod memory_management;
 pub mod opensbi;
 pub mod smp;
+pub mod timer;
 
 global_asm!(include_str!("asm/init.asm"));
 global_asm!(include_str!("asm/trap.asm"));
@@ -29,6 +30,7 @@ global_asm!(include_str!("asm/satp.asm"));
 global_asm!(include_str!("asm/sfence_vma.asm"));
 global_asm!(include_str!("asm/jump_to_user_space.asm"));
 global_asm!(include_str!("asm/rdtime.asm"));
+global_asm!(include_str!("asm/init_timer.asm"));
 
 unsafe extern "C" {
     pub static TEXT_BEGIN: u64;
@@ -49,6 +51,7 @@ unsafe extern "C" {
     pub fn sfence_vma();
     pub fn jump_to_user_space(program_counter: u64) -> !;
     pub fn rdtime() -> u64;
+    pub fn init_timer();
 }
 
 use crate::PAGING;

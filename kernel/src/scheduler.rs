@@ -17,11 +17,12 @@
 */
 
 use crate::{
-    arch::{self, HEAP_BEGIN, TEXT_BEGIN, jump_to_user_space, memory_management::Paging},
+    arch::{HEAP_BEGIN, TEXT_BEGIN, jump_to_user_space, memory_management::Paging, timer::Timer},
     frame_allocator,
     memory_management::{
         PAGE_EXEC_FLAG, PAGE_READ_FLAG, PAGE_USER_FLAG, PAGE_WRITE_FLAG, PagingInterface,
     },
+    timer::TimerInterface,
 };
 use lazy_static::lazy_static;
 use spin::Mutex;
@@ -159,7 +160,8 @@ pub fn switch() -> ! {
         task.pc
     };
 
-    arch::opensbi::set_timer(unsafe { arch::rdtime() } + 10000000);
+    Timer::set_timer(10000000).expect("Timer error");
+
     unsafe {
         jump_to_user_space(pc);
     }
