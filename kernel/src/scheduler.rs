@@ -140,6 +140,40 @@ pub fn add_task(prog: &[u8]) {
         .expect("User program mapping error");
 }
 
+pub fn delete_task(task_id: u32) {
+    let mut tasks = TASKS.lock();
+
+    if tasks[task_id as usize].status != TaskStatus::Runnable {
+        return;
+    }
+
+    tasks[task_id as usize].status = TaskStatus::None;
+
+    let task_paging = Paging::from_page_table(tasks[task_id as usize].page_table);
+
+    unsafe {
+        task_paging
+            .unmap_region(TEXT_BEGIN, HEAP_BEGIN as usize - TEXT_BEGIN as usize)
+            .expect("Kernel unmapping error");
+    }
+    task_paging
+        .unmap(0x1000_0000, 0)
+        .expect("UART unmapping error");
+    task_paging
+        .unmap(0x9000_0000, 0)
+        .expect("Kernel stack unmapping error");
+    task_paging
+        .unmap_region(0x9010_0000, tasks[task_id as usize].prog_size)
+        .expect("User program unmapping error");
+
+    let prog_len = tasks[task_id as usize].prog_size;
+    let prog_size_in_pages = prog_len / 4096 + (prog_len % 4096 > 0) as usize;
+
+    frame_allocator::dealloc(tasks[task_id as usize].prog_addr, prog_size_in_pages);
+    frame_allocator::dealloc(tasks[task_id as usize].kernel_stack, 1);
+    frame_allocator::dealloc(tasks[task_id as usize].page_table, 1);
+}
+
 pub fn switch() -> ! {
     let pc = {
         let tasks = TASKS.lock();
