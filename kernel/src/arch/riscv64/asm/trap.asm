@@ -21,14 +21,13 @@
 .align 16
 .global trap_handler_table
 trap_handler_table:
+.option exact
+        j .
         j .
         j .
         j .
         j .
         j timer_interrupt_asm
-        j timer_interrupt_asm
-        j timer_interrupt_asm
-        j timer_interrupt_asm
         j .
         j .
         j .
@@ -37,6 +36,9 @@ trap_handler_table:
         j .
         j .
         j .
+        j .
+        j .
+.option noexact
         
 .align 16
 .global timer_interrupt_asm
