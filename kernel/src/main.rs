@@ -27,6 +27,7 @@ mod memory_management;
 mod ns16550a;
 mod scheduler;
 mod smp;
+mod syscall;
 mod timer;
 
 use core::panic::PanicInfo;

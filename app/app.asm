@@ -2,6 +2,8 @@
 
 .global start
 start:
+        ecall
+
         li a0, 0x10000000
         li t0, 0x61
         li t1, 0x7a
