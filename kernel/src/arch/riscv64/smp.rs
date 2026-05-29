@@ -21,22 +21,20 @@ use crate::arch::opensbi;
 pub struct Smp;
 
 impl crate::smp::SmpInterface for Smp {
-    fn new() -> Self {
-        Self {}
-    }
+    fn init() {}
 
-    fn start_cpu(&self, cpu_id: u64) -> Result<(), &str> {
+    fn start_cpu(cpu_id: u64) -> Result<(), ()> {
         let result = opensbi::hart_start(cpu_id, 0x8020_0000, 1);
 
         match result.error {
             opensbi::SUCCESS => return Ok(()),
-            opensbi::FAILED => return Err("opensbi error: failed"),
-            opensbi::NOT_SUPPORTED => return Err("opensbi error: not supported"),
-            opensbi::INVALID_PARAMETER => return Err("opensbi error: invalid parameter"),
-            opensbi::DENIED => return Err("opensbi error: denied"),
-            opensbi::INVALID_ADDRESS => return Err("opensbi error: invalid address"),
-            opensbi::ALREADY_AVAILABLE => return Err("opensbi error: already available"),
-            _ => return Err("opensbi error: unknown error code"),
+            opensbi::FAILED => return Err(()),
+            opensbi::NOT_SUPPORTED => return Err(()),
+            opensbi::INVALID_PARAMETER => return Err(()),
+            opensbi::DENIED => return Err(()),
+            opensbi::INVALID_ADDRESS => return Err(()),
+            opensbi::ALREADY_AVAILABLE => return Err(()),
+            _ => return Err(()),
         }
     }
 }

@@ -17,7 +17,7 @@
 */
 
 pub trait SmpInterface {
-    fn new() -> Self;
+    fn init();
 
-    fn start_cpu(&self, cpu_id: u64) -> Result<(), &str>;
+    fn start_cpu(cpu_id: u64) -> Result<(), ()>;
 }

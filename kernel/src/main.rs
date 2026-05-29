@@ -36,7 +36,7 @@ use smp::SmpInterface;
 use spin::Mutex;
 
 use crate::{
-    arch::{memory_management::Paging, timer::Timer},
+    arch::{memory_management::Paging, smp::Smp, timer::Timer},
     memory_management::{PAGE_EXEC_FLAG, PAGE_READ_FLAG, PAGE_WRITE_FLAG, PagingInterface},
     ns16550a::Ns16550a,
     timer::TimerInterface,
@@ -118,10 +118,10 @@ extern "C" fn main(is_main_cpu: bool, cpu_id: usize, device_tree_blob: *mut u8) 
 
         println!("Pryvitanne svet!");
 
-        let smp = arch::smp::Smp::new();
+        Smp::init();
         (0..harddet.cpu_count).for_each(|cpu_id_to_run| {
             if cpu_id_to_run != cpu_id {
-                smp.start_cpu(cpu_id_to_run as u64).unwrap();
+                Smp::start_cpu(cpu_id_to_run as u64).unwrap();
             }
         });
 
