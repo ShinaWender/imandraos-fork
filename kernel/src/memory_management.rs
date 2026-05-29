@@ -34,9 +34,9 @@ pub trait PagingInterface {
         virtual_address: u64,
         level: u32,
         flags: u8,
-    ) -> Result<(), &str>;
+    ) -> Result<(), ()>;
 
-    fn unmap(&self, virtual_address: u64, level: u32) -> Result<(), &str>;
+    fn unmap(&self, virtual_address: u64, level: u32) -> Result<(), ()>;
 
     fn map_region(
         &self,
@@ -44,9 +44,9 @@ pub trait PagingInterface {
         virtual_address: u64,
         region_size: usize,
         flags: u8,
-    ) -> Result<(), &str>;
+    ) -> Result<(), ()>;
 
-    fn unmap_region(&self, virtual_address: u64, region_size: usize) -> Result<(), &str>;
+    fn unmap_region(&self, virtual_address: u64, region_size: usize) -> Result<(), ()>;
 
     fn enable(&self);
 

@@ -92,7 +92,7 @@ impl PagingInterface for Paging {
         virtual_address: u64,
         level: u32,
         flags: u8,
-    ) -> Result<(), &str> {
+    ) -> Result<(), ()> {
         let vpn: [u64; 3] = [
             (virtual_address >> 12) & 0x1ff,
             (virtual_address >> 21) & 0x1ff,
@@ -136,7 +136,7 @@ impl PagingInterface for Paging {
         Ok(())
     }
 
-    fn unmap(&self, virtual_address: u64, level: u32) -> Result<(), &str> {
+    fn unmap(&self, virtual_address: u64, level: u32) -> Result<(), ()> {
         Ok(())
     }
 
@@ -146,7 +146,7 @@ impl PagingInterface for Paging {
         virtual_address: u64,
         region_size: usize,
         flags: u8,
-    ) -> Result<(), &str> {
+    ) -> Result<(), ()> {
         let pages_to_map_count =
             region_size / PAGE_SIZE_L0 + (region_size % PAGE_SIZE_L0 != 0) as usize;
 
@@ -163,7 +163,7 @@ impl PagingInterface for Paging {
         Ok(())
     }
 
-    fn unmap_region(&self, virtual_address: u64, region_size: usize) -> Result<(), &str> {
+    fn unmap_region(&self, virtual_address: u64, region_size: usize) -> Result<(), ()> {
         Ok(())
     }
 
