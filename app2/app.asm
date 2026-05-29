@@ -2,7 +2,7 @@
 
 .global start
 start:
-        li t0, 'a'
+        li t0, 'b'
         li t2, '\n'
         li a0, 0x10000000
         li t1, 0xfffffff

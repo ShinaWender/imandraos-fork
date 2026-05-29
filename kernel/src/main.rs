@@ -129,6 +129,7 @@ extern "C" fn main(is_main_cpu: bool, cpu_id: usize, device_tree_blob: *mut u8) 
 
         scheduler::init();
         scheduler::add_task(include_bytes!("../../app/app"));
+        scheduler::add_task(include_bytes!("../../app2/app"));
         scheduler::switch();
     } else {
         PAGING.lock().enable();

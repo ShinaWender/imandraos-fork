@@ -178,15 +178,17 @@ pub fn switch() -> ! {
     let pc = {
         let tasks = TASKS.lock();
 
-        while tasks[*CURRENT_TASK_ID.lock() as usize].status != TaskStatus::Runnable {
-            *CURRENT_TASK_ID.lock() += 1;
+        let mut next_task_id = *CURRENT_TASK_ID.lock() + 1;
 
-            if *CURRENT_TASK_ID.lock() == 32 {
-                *CURRENT_TASK_ID.lock() = 0;
+        while tasks[next_task_id as usize].status != TaskStatus::Runnable {
+            next_task_id += 1;
+            if next_task_id == 32 {
+                next_task_id = 0;
             }
         }
 
-        let task = &tasks[*CURRENT_TASK_ID.lock() as usize];
+        let task = &tasks[next_task_id as usize];
+        *CURRENT_TASK_ID.lock() = next_task_id;
 
         let paging = Paging::from_page_table(task.page_table);
         paging.enable();
@@ -194,7 +196,7 @@ pub fn switch() -> ! {
         task.pc
     };
 
-    Timer::set_timer(10000000).expect("Timer error");
+    Timer::set_timer(1000000).expect("Timer error");
 
     unsafe {
         jump_to_user_space(pc);
