@@ -5,9 +5,14 @@ ENTRY(start)
 PAGE_SIZE = 0x1000;
 
 SECTIONS {
+    /DISCARD/ : {
+        *(.eh_frame);
+    }
+    
     . = 0x90100000;
 
     .text ALIGN(PAGE_SIZE) : {
+        *(.text.init);
         *(.text .text*);
     }
 
