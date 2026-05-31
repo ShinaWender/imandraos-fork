@@ -16,9 +16,16 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+use crate::scheduler;
+
+pub const SYSCALL_EXIT: u64 = 0;
+
 #[unsafe(no_mangle)]
 extern "C" fn syscall_handler(syscall: u64) {
     match syscall {
+        SYSCALL_EXIT => {
+            scheduler::delete_current_task();
+        }
         _ => {}
     }
 }

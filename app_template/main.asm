@@ -28,6 +28,9 @@ STACK_TOP:
 
 .global start
 start:
+        li a0, 0
+        ecall
+
         la sp, STACK_TOP
 
         li a0, 0x10000000

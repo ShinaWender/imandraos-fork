@@ -174,6 +174,10 @@ pub fn delete_task(task_id: u32) {
     frame_allocator::dealloc(tasks[task_id as usize].page_table, 1);
 }
 
+pub fn delete_current_task() {
+    delete_task(*CURRENT_TASK_ID.lock());
+}
+
 pub fn switch() -> ! {
     let pc = {
         let tasks = TASKS.lock();

@@ -129,7 +129,8 @@ env_call_asm:
 
         csrr t0, sscratch
         sd t0, 72(a0)
-
+        mv a0, t0
+        
         call syscall_handler
 
         csrr a0, sepc
