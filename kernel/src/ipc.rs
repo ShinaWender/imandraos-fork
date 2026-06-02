@@ -16,18 +16,34 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::scheduler;
+use lazy_static::lazy_static;
+use spin::Mutex;
 
-pub const SYSCALL_EXIT: u64 = 0;
-pub const SYSCALL_SEND: u64 = 0;
-pub const SYSCALL_RECV: u64 = 0;
+#[derive(Clone, Copy)]
+pub struct Message {
+    pub sender_task_id: u64,
+    pub receiver_task_id: u64,
+    pub data_addr: u64,
+}
 
-#[unsafe(no_mangle)]
-extern "C" fn syscall_handler(syscall: u64) {
-    match syscall {
-        SYSCALL_EXIT => {
-            scheduler::delete_current_task();
+impl Message {
+    pub fn new() -> Self {
+        Self {
+            sender_task_id: 0,
+            receiver_task_id: 0,
+            data_addr: 0,
         }
-        _ => {}
     }
+}
+
+lazy_static! {
+    static ref MESSAGES: Mutex<[Message; 32]> = Mutex::new([Message::new(); 32]);
+}
+
+pub fn send(sender_task_id: u64, receiver_task_id: u64, data: &[u8]) -> Result<(), ()> {
+    Ok(())
+}
+
+pub fn receive(receiver_task_id: u64) -> Message {
+    Message::new()
 }

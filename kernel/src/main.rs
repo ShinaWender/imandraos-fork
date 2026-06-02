@@ -23,6 +23,7 @@
 mod arch;
 mod frame_allocator;
 mod hardware_detection;
+mod ipc;
 mod memory_management;
 mod ns16550a;
 mod scheduler;
