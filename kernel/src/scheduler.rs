@@ -83,18 +83,18 @@ pub fn add_task(prog: &[u8]) {
 
     let task = &mut TASKS.lock()[task_id as usize];
 
-    let prog_size_in_pages = prog.len() / 4096 + (prog.len() % 4096 > 0) as usize;
+    let prog_size_in_pages = prog.len() / 4096 + (prog.len() % 4096 > 0) as usize + 200;
 
     task.parent_task_id = 0;
     task.status = TaskStatus::Runnable;
     task.pc = 0x9010_0000;
     task.prog_addr = frame_allocator::alloc(prog_size_in_pages);
-    task.prog_size = prog.len();
+    task.prog_size = prog_size_in_pages * 4096;
     task.kernel_stack = frame_allocator::alloc(1);
     task.page_table = frame_allocator::alloc(1);
 
     let prog_mem =
-        unsafe { core::slice::from_raw_parts_mut(task.prog_addr as *mut u8, task.prog_size) };
+        unsafe { core::slice::from_raw_parts_mut(task.prog_addr as *mut u8, prog.len()) };
     prog_mem.copy_from_slice(prog);
 
     let page_table = unsafe { core::slice::from_raw_parts_mut(task.page_table as *mut u32, 4096) };
@@ -174,10 +174,6 @@ pub fn delete_task(task_id: u32) {
     frame_allocator::dealloc(tasks[task_id as usize].page_table, 1);
 }
 
-pub fn delete_current_task() {
-    delete_task(*CURRENT_TASK_ID.lock());
-}
-
 pub fn switch() -> ! {
     let pc = {
         let tasks = TASKS.lock();
@@ -209,4 +205,8 @@ pub fn switch() -> ! {
 
 pub fn update_pc_for_current_task(new_program_counter: u64) {
     TASKS.lock()[*CURRENT_TASK_ID.lock() as usize].pc = new_program_counter;
+}
+
+pub fn get_current_task_id() -> u32 {
+    *CURRENT_TASK_ID.lock()
 }

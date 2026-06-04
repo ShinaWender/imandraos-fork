@@ -16,18 +16,45 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+use crate::ipc;
+use crate::ns16550a::RECEIVED_DATA_READY_INTR;
 use crate::scheduler;
 
 pub const SYSCALL_EXIT: u64 = 0;
-pub const SYSCALL_SEND: u64 = 0;
-pub const SYSCALL_RECV: u64 = 0;
+pub const SYSCALL_GTID: u64 = 1;
+pub const SYSCALL_SEND: u64 = 2;
+pub const SYSCALL_RECV: u64 = 3;
 
 #[unsafe(no_mangle)]
-extern "C" fn syscall_handler(syscall: u64) {
+extern "C" fn syscall_handler(syscall: u64, a0: u64, a1: u64, a2: u64) -> u64 {
     match syscall {
         SYSCALL_EXIT => {
-            scheduler::delete_current_task();
+            let task_id = a0 as u32;
+
+            scheduler::delete_task(task_id);
+
+            0
         }
-        _ => {}
+        SYSCALL_GTID => scheduler::get_current_task_id() as u64,
+        SYSCALL_SEND => {
+            let sender_task_id = a0 as u32;
+            let receiver_task_id = a1 as u32;
+            let data = unsafe { &*core::ptr::slice_from_raw_parts(a2 as *const u8, 4096) };
+
+            match ipc::send(sender_task_id, receiver_task_id, data) {
+                Ok(()) => 0,
+                Err(()) => 1,
+            }
+        }
+        SYSCALL_RECV => {
+            let receiver_task_id = a0 as u32;
+            let data = unsafe { &mut *core::ptr::slice_from_raw_parts_mut(a1 as *mut u8, 4096) };
+
+            match ipc::receive(receiver_task_id, data) {
+                Ok(()) => 0,
+                Err(()) => 1,
+            }
+        }
+        _ => 0,
     }
 }

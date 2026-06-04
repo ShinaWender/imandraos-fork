@@ -21,6 +21,12 @@
 .align 16
 .global jump_to_user_space
 jump_to_user_space:
+   csrr t0, sstatus
+   li t1, 1
+   slli t1, t1, 18
+   or t0, t0, t1
+   csrw sstatus, t0
+
    csrw sepc, a0
    li a0, 0x90000000
 

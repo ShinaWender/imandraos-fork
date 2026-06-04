@@ -24,18 +24,35 @@
 .endr
 STACK_TOP:
 
+.align 16
+MESSAGE_BUFFER:
+.rep 4096
+.byte 0
+.endr
+
 .section .text
 
 .global start
 start:
-        li a0, 0
+        li a0, 1
         ecall
 
-        la sp, STACK_TOP
+        mv t6, a0
 
-        li a0, 0x10000000
-        li t0, 'A'
-write_byte:
-        sd t0, 0(a0)
-        j write_byte
-        
+        li t0, 0x10000000
+        addi a0, a0, '0'
+        sd a0, 0(t0)
+
+        la t0, MESSAGE_BUFFER
+        li t1, 'A'
+        sd t1, 0(t0)
+        sd t1, 8(t0)
+
+        li a0, 2
+        mv a1, t6
+        mv a2, t6
+        la a3, MESSAGE_BUFFER
+        ecall
+
+        li a0, 0
+        ecall

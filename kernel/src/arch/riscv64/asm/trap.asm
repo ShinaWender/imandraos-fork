@@ -133,5 +133,8 @@ env_call_asm:
         
         call syscall_handler
 
+        li t0, 0x90000000
+        sd a0, 72(t0)
+
         csrr a0, sepc
         j _switch
