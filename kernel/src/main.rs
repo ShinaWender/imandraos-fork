@@ -129,7 +129,8 @@ extern "C" fn main(is_main_cpu: bool, cpu_id: usize, device_tree_blob: *mut u8) 
         println!("cpu{} enabled", cpu_id);
 
         scheduler::init();
-        scheduler::add_task(include_bytes!("../../app_template/app"));
+        scheduler::add_task(include_bytes!("../../ipc_test1/app"));
+        scheduler::add_task(include_bytes!("../../ipc_test2/app"));
         scheduler::switch();
     } else {
         PAGING.lock().enable();

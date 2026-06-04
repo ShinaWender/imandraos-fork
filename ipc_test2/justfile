@@ -1,0 +1,26 @@
+cargo := `which cargo`
+    
+target := ''
+debug := ''
+
+as := \
+if target == 'riscv64' { 'riscv64-unknown-none-elf-as' } \
+else { 'as' }
+
+ld := \
+if target == 'riscv64' { 'riscv64-unknown-none-elf-ld' } \
+else { 'ld' }
+
+objcopy := \
+if target == 'riscv64' { 'riscv64-unknown-none-elf-objcopy' } \
+else { 'objcopy' }
+
+clean:
+    rm main.o
+    rm app
+
+build:
+    {{ as }} main.asm -o main.o
+    {{ ld }} -T ./ldscripts/riscv64_linker.ld -o app main.o
+    {{ objcopy }} -O binary app
+    

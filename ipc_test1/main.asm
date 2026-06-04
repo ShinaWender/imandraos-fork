@@ -18,39 +18,42 @@
 
 .section .data
 
-msg0: .ascii "Hello, world!\n\r\0"
-msg1: .ascii "My task id: \0"
+string: .ascii "Hello, world! If you see this message than IPC works!\0"
+
+.section .bss
+
+.align 16
+MESSAGE_BUFFER:
+.rep 4096
+.byte 0
+.endr
 
 .section .text
 
 .global start
 start:
-        /* GTID syscall */
         li a0, 1
         ecall
         mv t6, a0
 
-        la a0, msg0
-        call print_string
+        la a0, string
+        la a1, MESSAGE_BUFFER
         
-        la a0, msg1
-        call print_string
-
-        li t1, 0xe000
-        addi t6, t6, '0'
-        sb t6, 0(t1)
-        
-        /* EXIT syscall */
-        li a0, 0
-        ecall
-
-print_string:
-        li t1, 0xe000
+next:
         lb t0, 0(a0)
-        beqz t0, finish
-        sb t0, 0(t1)
+        sb t0, 0(a1)
+        
         addi a0, a0, 1
-        j print_string
+        addi a1, a1, 1
+        
+        beqz t0, finish
+
+        j next    
 
 finish:
-        ret
+        li a0, 2
+        mv a1, t6
+        addi a2, t6, 1
+        la a3, MESSAGE_BUFFER
+        
+        j .

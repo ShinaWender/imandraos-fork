@@ -16,33 +16,34 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-.section .data
+.section .bss
 
-msg0: .ascii "Hello, world!\n\r\0"
-msg1: .ascii "My task id: \0"
+.align 16
+MESSAGE_BUFFER:
+.rep 4096
+.byte 0
+.endr
 
 .section .text
 
 .global start
-start:
-        /* GTID syscall */
+start:        
         li a0, 1
         ecall
         mv t6, a0
 
-        la a0, msg0
-        call print_string
-        
-        la a0, msg1
-        call print_string
-
-        li t1, 0xe000
-        addi t6, t6, '0'
-        sb t6, 0(t1)
-        
-        /* EXIT syscall */
-        li a0, 0
+recv:
+        li a0, 3
+        mv a1, t6
+        la a2, MESSAGE_BUFFER
         ecall
+
+        beqz a0, success
+        j recv
+
+success:
+        la a0, MESSAGE_BUFFER
+        call print_string
 
 print_string:
         li t1, 0xe000
