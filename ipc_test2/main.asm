@@ -45,6 +45,9 @@ success:
         la a0, MESSAGE_BUFFER
         call print_string
 
+        li a0, 0
+        ecall
+
 print_string:
         li t1, 0xe000
         lb t0, 0(a0)
