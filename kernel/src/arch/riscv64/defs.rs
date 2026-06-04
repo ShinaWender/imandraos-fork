@@ -16,30 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use lazy_static::lazy_static;
-use spin::Mutex;
-
-use crate::arch::defs;
-
-lazy_static! {
-    static ref HEAP_BEGIN_ADDR: Mutex<u64> = Mutex::new(0);
-    static ref HEAP_SIZE: Mutex<usize> = Mutex::new(0);
-    static ref FRAME_COUNTER: Mutex<usize> = Mutex::new(0);
-}
-
-pub fn init(heap_begin_addr: u64, heap_size: usize) {
-    *HEAP_BEGIN_ADDR.lock() = heap_begin_addr;
-    *HEAP_SIZE.lock() = heap_size;
-    *FRAME_COUNTER.lock() = 0;
-}
-
-pub fn alloc(frame_count: usize) -> u64 {
-    let addr = *HEAP_BEGIN_ADDR.lock()
-        + (*FRAME_COUNTER.lock() * defs::PAGE_SIZE) as u64
-        + (frame_count * defs::PAGE_SIZE) as u64;
-    *FRAME_COUNTER.lock() += frame_count;
-
-    addr
-}
-
-pub fn dealloc(frame_addr: u64, frame_count: usize) {}
+pub const PAGE_SIZE: usize = 4096;
+pub const PROGRAM_BEGIN: u64 = 0x10_0000;
+pub const KSTACK_BEGIN: u64 = 0xf000;
+pub const GENERIC_UART_BASE: u64 = 0xe000;

@@ -44,7 +44,7 @@ trap_handler_table:
 .global timer_interrupt_asm
 timer_interrupt_asm:
         csrw sscratch, a0
-        li a0, 0x90000000
+        li a0, 0xf000
 
         sd x1, 0(a0)
         sd x2, 8(a0)
@@ -92,7 +92,7 @@ timer_interrupt_asm:
 .global env_call_asm
 env_call_asm:
         csrw sscratch, a0
-        li a0, 0x90000000
+        li a0, 0xf000
 
         sd x1, 0(a0)
         sd x2, 8(a0)
@@ -133,7 +133,7 @@ env_call_asm:
         
         call syscall_handler
 
-        li t0, 0x90000000
+        li t0, 0xf000
         sd a0, 72(t0)
 
         csrr a0, sepc

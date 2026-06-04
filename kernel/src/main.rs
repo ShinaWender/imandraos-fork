@@ -37,7 +37,7 @@ use smp::SmpInterface;
 use spin::Mutex;
 
 use crate::{
-    arch::{memory_management::Paging, smp::Smp, timer::Timer},
+    arch::{defs, memory_management::Paging, smp::Smp, timer::Timer},
     memory_management::{PAGE_EXEC_FLAG, PAGE_READ_FLAG, PAGE_WRITE_FLAG, PagingInterface},
     ns16550a::Ns16550a,
     timer::TimerInterface,

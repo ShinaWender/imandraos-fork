@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+use crate::arch::defs;
 use crate::arch::set_satp;
 use crate::arch::sfence_vma;
 use crate::frame_allocator;
@@ -38,6 +39,8 @@ const PTE_ACCESS_FLAG: u64 = 0b10000000;
 const PAGE_SIZE_L0: usize = 0x1000;
 const PAGE_SIZE_L1: usize = 0x20_0000;
 const PAGE_SIZE_L2: usize = 0x4000_0000;
+
+const PTE_SIZE: usize = 8;
 
 struct Pte {
     value: u64,
@@ -62,7 +65,7 @@ impl Pte {
 }
 
 struct Page {
-    data: [Pte; 4096 / 8],
+    data: [Pte; defs::PAGE_SIZE / PTE_SIZE],
 }
 
 impl PagingInterface for Paging {

@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::arch::opensbi;
+use crate::arch::{self, opensbi};
 
 pub struct Smp;
 
@@ -24,7 +24,7 @@ impl crate::smp::SmpInterface for Smp {
     fn init() {}
 
     fn start_cpu(cpu_id: u64) -> Result<(), ()> {
-        let result = opensbi::hart_start(cpu_id, 0x8020_0000, 1);
+        let result = opensbi::hart_start(cpu_id, unsafe { arch::TEXT_BEGIN }, 1);
 
         match result.error {
             opensbi::SUCCESS => return Ok(()),

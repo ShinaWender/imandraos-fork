@@ -19,10 +19,10 @@
 .section .bss
 
 .align 16
+MESSAGE_BUFFER2:
 .rep 4096
 .byte 0
 .endr
-STACK_TOP:
 
 .align 16
 MESSAGE_BUFFER:
@@ -39,14 +39,15 @@ start:
 
         mv t6, a0
 
-        li t0, 0x10000000
+        li t0, 0xe000
         addi a0, a0, '0'
         sd a0, 0(t0)
 
         la t0, MESSAGE_BUFFER
         li t1, 'A'
         sd t1, 0(t0)
-        sd t1, 8(t0)
+        sd t1, 1(t0)
+        sd t1, 3(t0)
 
         li a0, 2
         mv a1, t6
@@ -54,5 +55,31 @@ start:
         la a3, MESSAGE_BUFFER
         ecall
 
+        li a0, 3
+        mv a1, t6
+        la a2, MESSAGE_BUFFER2
+        ecall
+
+        li t0, 0xe000
+
+        beqz a0, success
+        j fail
+        
+success:
+        li a0, 's'
+        sd a0, 0(t0)
+
+        la a1, MESSAGE_BUFFER2
+        ld a0, 0(a1)
+        sd a0, 0(t0)
+        
+        j exit
+        
+fail:
+        li a0, 'f'
+        sd a0, 0(t0)
+        j exit
+
+exit:
         li a0, 0
         ecall

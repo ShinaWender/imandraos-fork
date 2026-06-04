@@ -9,7 +9,7 @@ SECTIONS {
         *(.eh_frame);
     }
     
-    . = 0x90100000;
+    . = 0x100000;
 
     .text ALIGN(PAGE_SIZE) : {
         *(.text.init);

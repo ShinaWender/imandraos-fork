@@ -28,7 +28,7 @@ jump_to_user_space:
    csrw sstatus, t0
 
    csrw sepc, a0
-   li a0, 0x90000000
+   li a0, 0xf000
 
    sd sp, 248(a0)
 

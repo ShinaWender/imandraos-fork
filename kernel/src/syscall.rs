@@ -17,7 +17,6 @@
 */
 
 use crate::ipc;
-use crate::ns16550a::RECEIVED_DATA_READY_INTR;
 use crate::scheduler;
 
 pub const SYSCALL_EXIT: u64 = 0;

@@ -19,6 +19,7 @@
 use lazy_static::lazy_static;
 use spin::Mutex;
 
+use crate::arch::defs;
 use crate::frame_allocator;
 
 #[derive(Clone, Copy)]
@@ -38,18 +39,25 @@ impl Message {
     }
 }
 
+const MAX_MESSAGE_COUNT: usize = 32;
+
 lazy_static! {
-    static ref MESSAGES: Mutex<[Message; 32]> = Mutex::new([Message::new(); 32]);
-    static ref FIRST_MESSAGE_ID: Mutex<usize> = Mutex::new(32);
+    static ref MESSAGES: Mutex<[Message; MAX_MESSAGE_COUNT]> =
+        Mutex::new([Message::new(); MAX_MESSAGE_COUNT]);
+    static ref FIRST_MESSAGE_ID: Mutex<usize> = Mutex::new(MAX_MESSAGE_COUNT);
 }
 
 pub fn send(sender_task_id: u32, receiver_task_id: u32, data: &[u8]) -> Result<(), ()> {
-    if data.len() > 4096 {
+    if data.len() > defs::PAGE_SIZE {
+        return Err(());
+    }
+
+    if *FIRST_MESSAGE_ID.lock() == 0 {
         return Err(());
     }
 
     *FIRST_MESSAGE_ID.lock() -= 1;
-    let mut message = &mut MESSAGES.lock()[*FIRST_MESSAGE_ID.lock()];
+    let message = &mut MESSAGES.lock()[*FIRST_MESSAGE_ID.lock()];
 
     message.sender_task_id = sender_task_id;
     message.receiver_task_id = receiver_task_id;
@@ -65,7 +73,7 @@ pub fn send(sender_task_id: u32, receiver_task_id: u32, data: &[u8]) -> Result<(
 }
 
 pub fn receive(receiver_task_id: u32, data: &mut [u8]) -> Result<(), ()> {
-    if *FIRST_MESSAGE_ID.lock() >= 32 {
+    if *FIRST_MESSAGE_ID.lock() >= MAX_MESSAGE_COUNT {
         return Err(());
     }
 

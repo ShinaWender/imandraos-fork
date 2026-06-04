@@ -51,8 +51,8 @@ extern "C" fn sbi_call(
     );
 }
 
-pub fn hart_start(hart_id: u64, start_addr: usize, privilege: u64) -> Sbiret {
-    sbi_call(hart_id, start_addr as u64, privilege, 0, 0, 0, 0, 0x48534d)
+pub fn hart_start(hart_id: u64, start_addr: u64, privilege: u64) -> Sbiret {
+    sbi_call(hart_id, start_addr, privilege, 0, 0, 0, 0, 0x48534d)
 }
 
 pub fn set_timer(time_value: u64) -> Sbiret {

@@ -18,6 +18,7 @@
 
 use core::arch::global_asm;
 
+pub mod defs;
 pub mod memory_management;
 pub mod opensbi;
 pub mod smp;

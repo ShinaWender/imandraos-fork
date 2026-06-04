@@ -17,7 +17,9 @@
 */
 
 use crate::{
-    arch::{HEAP_BEGIN, TEXT_BEGIN, jump_to_user_space, memory_management::Paging, timer::Timer},
+    arch::{
+        HEAP_BEGIN, TEXT_BEGIN, defs, jump_to_user_space, memory_management::Paging, timer::Timer,
+    },
     frame_allocator,
     memory_management::{
         PAGE_EXEC_FLAG, PAGE_READ_FLAG, PAGE_USER_FLAG, PAGE_WRITE_FLAG, PagingInterface,
@@ -61,13 +63,15 @@ impl Task {
     }
 }
 
+const MAX_TASK_COUNT: usize = 32;
+
 lazy_static! {
-    pub static ref TASKS: Mutex<[Task; 32]> = Mutex::new([Task::new(); 32]);
+    pub static ref TASKS: Mutex<[Task; MAX_TASK_COUNT]> = Mutex::new([Task::new(); MAX_TASK_COUNT]);
     pub static ref CURRENT_TASK_ID: Mutex<u32> = Mutex::new(0);
 }
 
 pub fn init() {
-    (0..32).for_each(|task_id| {
+    (0..MAX_TASK_COUNT).for_each(|task_id| {
         TASKS.lock()[task_id].id = task_id as u32;
         TASKS.lock()[task_id].status = TaskStatus::None;
     });
@@ -83,13 +87,14 @@ pub fn add_task(prog: &[u8]) {
 
     let task = &mut TASKS.lock()[task_id as usize];
 
-    let prog_size_in_pages = prog.len() / 4096 + (prog.len() % 4096 > 0) as usize + 200;
+    let prog_size_in_pages =
+        prog.len() / defs::PAGE_SIZE + (prog.len() % defs::PAGE_SIZE > 0) as usize + 200;
 
     task.parent_task_id = 0;
     task.status = TaskStatus::Runnable;
-    task.pc = 0x9010_0000;
+    task.pc = defs::PROGRAM_BEGIN;
     task.prog_addr = frame_allocator::alloc(prog_size_in_pages);
-    task.prog_size = prog_size_in_pages * 4096;
+    task.prog_size = prog_size_in_pages * defs::PAGE_SIZE;
     task.kernel_stack = frame_allocator::alloc(1);
     task.page_table = frame_allocator::alloc(1);
 
@@ -97,25 +102,24 @@ pub fn add_task(prog: &[u8]) {
         unsafe { core::slice::from_raw_parts_mut(task.prog_addr as *mut u8, prog.len()) };
     prog_mem.copy_from_slice(prog);
 
-    let page_table = unsafe { core::slice::from_raw_parts_mut(task.page_table as *mut u32, 4096) };
+    let page_table =
+        unsafe { core::slice::from_raw_parts_mut(task.page_table as *mut u32, defs::PAGE_SIZE) };
     page_table.fill(0);
     let task_paging = Paging::from_page_table(task.page_table);
 
-    unsafe {
-        task_paging
-            .map_region(
-                TEXT_BEGIN,
-                TEXT_BEGIN,
-                HEAP_BEGIN as usize - TEXT_BEGIN as usize,
-                PAGE_READ_FLAG | PAGE_WRITE_FLAG | PAGE_EXEC_FLAG,
-            )
-            .expect("Kernel mapping error");
-    }
+    task_paging
+        .map(
+            0x8000_0000,
+            0x8000_0000,
+            2,
+            PAGE_READ_FLAG | PAGE_WRITE_FLAG | PAGE_EXEC_FLAG,
+        )
+        .expect("Kernel mapping error");
 
     task_paging
         .map(
             0x1000_0000,
-            0x1000_0000,
+            defs::GENERIC_UART_BASE,
             0,
             PAGE_READ_FLAG | PAGE_WRITE_FLAG | PAGE_USER_FLAG,
         )
@@ -124,7 +128,7 @@ pub fn add_task(prog: &[u8]) {
     task_paging
         .map(
             task.kernel_stack,
-            0x9000_0000,
+            defs::KSTACK_BEGIN,
             0,
             PAGE_READ_FLAG | PAGE_WRITE_FLAG,
         )
@@ -157,17 +161,17 @@ pub fn delete_task(task_id: u32) {
             .expect("Kernel unmapping error");
     }
     task_paging
-        .unmap(0x1000_0000, 0)
+        .unmap(defs::GENERIC_UART_BASE, 0)
         .expect("UART unmapping error");
     task_paging
-        .unmap(0x9000_0000, 0)
+        .unmap(defs::KSTACK_BEGIN, 0)
         .expect("Kernel stack unmapping error");
     task_paging
-        .unmap_region(0x9010_0000, tasks[task_id as usize].prog_size)
+        .unmap_region(defs::PROGRAM_BEGIN, tasks[task_id as usize].prog_size)
         .expect("User program unmapping error");
 
     let prog_len = tasks[task_id as usize].prog_size;
-    let prog_size_in_pages = prog_len / 4096 + (prog_len % 4096 > 0) as usize;
+    let prog_size_in_pages = prog_len / defs::PAGE_SIZE + (prog_len % defs::PAGE_SIZE > 0) as usize;
 
     frame_allocator::dealloc(tasks[task_id as usize].prog_addr, prog_size_in_pages);
     frame_allocator::dealloc(tasks[task_id as usize].kernel_stack, 1);
@@ -182,7 +186,7 @@ pub fn switch() -> ! {
 
         while tasks[next_task_id as usize].status != TaskStatus::Runnable {
             next_task_id += 1;
-            if next_task_id == 32 {
+            if next_task_id == MAX_TASK_COUNT as u32 {
                 next_task_id = 0;
             }
         }
