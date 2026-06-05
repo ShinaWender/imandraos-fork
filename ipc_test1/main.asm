@@ -55,5 +55,6 @@ finish:
         mv a1, t6
         addi a2, t6, 1
         la a3, MESSAGE_BUFFER
+        ecall
         
         j .
