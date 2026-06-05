@@ -71,9 +71,9 @@ fn panic(panic_info: &PanicInfo) -> ! {
 #[unsafe(no_mangle)]
 extern "C" fn main(is_main_cpu: bool, cpu_id: usize, device_tree_blob: *mut u8) -> ! {
     if is_main_cpu {
-        let harddet = hardware_detection::HardwareDetector::new(device_tree_blob);
-
         *CONSOLE.lock() = Console::new();
+
+        let harddet = hardware_detection::HardwareDetector::new(device_tree_blob);
 
         println!("RAM starts at 0x{:x}", harddet.ram_begin);
         println!(
