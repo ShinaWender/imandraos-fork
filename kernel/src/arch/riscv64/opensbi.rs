@@ -58,3 +58,7 @@ pub fn hart_start(hart_id: u64, start_addr: u64, privilege: u64) -> Sbiret {
 pub fn set_timer(time_value: u64) -> Sbiret {
     sbi_call(time_value, 0, 0, 0, 0, 0, 0, 0x5449_4d45)
 }
+
+pub fn put_char(ch: u8) -> Sbiret {
+    sbi_call(ch as u64, 0, 0, 0, 0, 0, 0, 1)
+}
