@@ -16,38 +16,13 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-use crate::ns16550a::Ns16550a;
-
 pub struct HardwareDetector {
     pub cpu_count: usize,
     pub ram_begin: u64,
     pub ram_size: usize,
-    pub ns16550a: Option<Ns16550a>,
 }
 
 impl HardwareDetector {
-    fn get_ns16550a(device_tree: fdt::Fdt) -> Ns16550a {
-        let node_name = device_tree
-            .chosen()
-            .stdout()
-            .expect("chosen node not found")
-            .name;
-
-        let str_begin = node_name
-            .as_bytes()
-            .iter()
-            .position(|&ch| ch == b'@')
-            .expect("invalid node name")
-            + 1;
-        let str_end = node_name.len();
-
-        let addr_str = &node_name[str_begin..str_end];
-        let addr = usize::from_str_radix(addr_str, 16).expect("from_str_radix() failed");
-
-        let uart = Ns16550a::new(addr);
-        uart
-    }
-
     pub fn new(device_tree_blob: *const u8) -> Self {
         let fdt = unsafe { fdt::Fdt::from_ptr(device_tree_blob).expect("invalid fdt") };
 
@@ -63,7 +38,6 @@ impl HardwareDetector {
             cpu_count: fdt.cpus().count(),
             ram_begin: 0x8000_0000,
             ram_size: ram_size,
-            ns16550a: Option::from(Self::get_ns16550a(fdt)),
         }
     }
 }

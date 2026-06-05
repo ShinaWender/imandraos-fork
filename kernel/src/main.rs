@@ -26,34 +26,33 @@ mod frame_allocator;
 mod hardware_detection;
 mod ipc;
 mod memory_management;
-mod ns16550a;
 mod scheduler;
 mod smp;
 mod syscall;
 mod timer;
 
-use core::{fmt::Write, panic::PanicInfo};
+use core::panic::PanicInfo;
 use lazy_static::lazy_static;
 use smp::SmpInterface;
 use spin::Mutex;
 
 use crate::{
-    arch::{defs, memory_management::Paging, smp::Smp, timer::Timer},
+    arch::{memory_management::Paging, smp::Smp, timer::Timer},
+    console::Console,
     memory_management::{PAGE_EXEC_FLAG, PAGE_READ_FLAG, PAGE_WRITE_FLAG, PagingInterface},
-    ns16550a::Ns16550a,
     timer::TimerInterface,
 };
 
 lazy_static! {
-    pub static ref UART: Mutex<Ns16550a> = Mutex::new(Ns16550a::new(0x0));
+    pub static ref CONSOLE: Mutex<Console> = Mutex::new(Console {});
     pub static ref PAGING: Mutex<Paging> = Mutex::new(Paging::from_page_table(0));
 }
 
 macro_rules! print {
     ($($arg:tt)*) => ({
         use core::fmt::Write;
-        let mut uart = $crate::UART.lock();
-        uart.write_fmt(format_args!($($arg)*)).expect("IO error");
+        let mut console = $crate::CONSOLE.lock();
+        console.write_fmt(format_args!($($arg)*)).expect("IO error");
     });
 }
 
@@ -73,11 +72,8 @@ fn panic(panic_info: &PanicInfo) -> ! {
 extern "C" fn main(is_main_cpu: bool, cpu_id: usize, device_tree_blob: *mut u8) -> ! {
     if is_main_cpu {
         let harddet = hardware_detection::HardwareDetector::new(device_tree_blob);
-        *UART.lock() = harddet.ns16550a.expect("ns16550a not found");
-        println!("NS16550A enabled");
 
-        let mut console = console::Console::new();
-        console.write_str("test\n");
+        *CONSOLE.lock() = Console::new();
 
         println!("RAM starts at 0x{:x}", harddet.ram_begin);
         println!(
@@ -95,15 +91,6 @@ extern "C" fn main(is_main_cpu: bool, cpu_id: usize, device_tree_blob: *mut u8) 
         *PAGING.lock() = Paging::new();
         {
             let paging = PAGING.lock();
-
-            paging
-                .map(
-                    0x1000_0000,
-                    0x1000_0000,
-                    0,
-                    PAGE_READ_FLAG | PAGE_WRITE_FLAG,
-                )
-                .expect("UART mapping error");
 
             paging
                 .map(
