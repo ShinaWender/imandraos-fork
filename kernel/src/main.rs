@@ -21,6 +21,7 @@
 #![no_builtins]
 
 mod arch;
+mod console;
 mod frame_allocator;
 mod hardware_detection;
 mod ipc;
@@ -31,7 +32,7 @@ mod smp;
 mod syscall;
 mod timer;
 
-use core::panic::PanicInfo;
+use core::{fmt::Write, panic::PanicInfo};
 use lazy_static::lazy_static;
 use smp::SmpInterface;
 use spin::Mutex;
@@ -74,6 +75,9 @@ extern "C" fn main(is_main_cpu: bool, cpu_id: usize, device_tree_blob: *mut u8) 
         let harddet = hardware_detection::HardwareDetector::new(device_tree_blob);
         *UART.lock() = harddet.ns16550a.expect("ns16550a not found");
         println!("NS16550A enabled");
+
+        let mut console = console::Console::new();
+        console.write_str("test\n");
 
         println!("RAM starts at 0x{:x}", harddet.ram_begin);
         println!(
