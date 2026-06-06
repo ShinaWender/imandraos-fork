@@ -52,9 +52,9 @@ next:
 
 finish:
         li a0, 2
-        mv a1, t6
-        addi a2, t6, 1
-        la a3, MESSAGE_BUFFER
+        addi a1, t6, 1
+        la a2, MESSAGE_BUFFER
         ecall
         
-        j .
+        li a0, 0
+        ecall
