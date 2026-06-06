@@ -34,8 +34,7 @@ start:
 
 recv:
         li a0, 3
-        mv a1, t6
-        la a2, MESSAGE_BUFFER
+        la a1, MESSAGE_BUFFER
         ecall
 
         beqz a0, success
